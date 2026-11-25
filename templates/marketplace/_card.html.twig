@@ -1,0 +1,45 @@
+{# Listing card used on the marketplace and the homepage. Expects `listing`. #}
+<article class="card-soft h-100 overflow-hidden d-flex flex-column">
+    <a href="{{ path('app_listing_show', {id: listing.id}) }}" class="d-block position-relative text-decoration-none">
+        {% if listing.coverImage %}
+            <img src="{{ asset('uploads/listings/' ~ listing.coverImage.filename) }}" alt="{{ listing.title }}" class="w-100" style="height: 190px; object-fit: cover;">
+        {% else %}
+            <div class="d-flex align-items-center justify-content-center bg-light text-secondary" style="height: 190px;">
+                <i class="bi bi-image fs-1"></i>
+            </div>
+        {% endif %}
+        {% if listing.isFeatured %}
+            <span class="badge text-bg-warning position-absolute top-0 start-0 m-2"><i class="bi bi-star-fill me-1"></i>Featured</span>
+        {% endif %}
+    </a>
+    <div class="p-3 d-flex flex-column flex-grow-1">
+        <a href="{{ path('app_listing_show', {id: listing.id}) }}" class="fw-semibold text-dark text-decoration-none mb-1">{{ listing.title }}</a>
+        <div class="small text-muted mb-2">
+            <i class="bi bi-geo-alt"></i> {{ listing.governorate }}{% if listing.city %} · {{ listing.city }}{% endif %}
+        </div>
+        <div class="mt-auto">
+            <div class="d-flex justify-content-between align-items-center gap-2">
+                <div>
+                    {% if listing.priceMillimes %}
+                        <span class="fw-bold">{{ listing.priceMillimes|tnd }} TND</span>
+                        {% if listing.type.value == 'swap' %}<span class="small text-muted">est.</span>{% endif %}
+                    {% else %}
+                        <span class="fw-bold">Swap only</span>
+                    {% endif %}
+                </div>
+                <span class="badge rounded-pill bg-light text-dark border">{{ listing.type.label }}</span>
+            </div>
+            <div class="small text-muted mt-2">
+                <i class="bi bi-tag"></i> {{ listing.condition.label }}
+                <span class="mx-1">·</span>
+                <i class="bi bi-eye"></i> {{ listing.viewCount }}
+            </div>
+            {% if app.user %}
+                <form method="post" action="{{ path('app_favorite_toggle', {id: listing.id}) }}" class="mt-2">
+                    <input type="hidden" name="_token" value="{{ csrf_token('favorite_' ~ listing.id) }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger w-100"><i class="bi bi-heart me-1"></i>Favorite</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</article>

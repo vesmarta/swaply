@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+
+{% form_theme resetForm 'bootstrap_5_layout.html.twig' %}
+
+{% block title %}Reset password — Swaply{% endblock %}
+
+{% block body %}
+    <div class="container py-5">
+        <div class="card-soft auth-card mx-auto p-4 p-md-5">
+            <h1 class="h3 fw-bold mb-1">Choose a new password</h1>
+            <p class="text-muted mb-4">Pick a strong password you have not used before.</p>
+
+            {{ form_start(resetForm) }}
+                {{ form_row(resetForm.plainPassword.first) }}
+                {{ form_row(resetForm.plainPassword.second) }}
+                <button type="submit" class="btn btn-brand w-100 py-2 fw-semibold mt-3">Reset password</button>
+            {{ form_end(resetForm) }}
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'base.html.twig' %}
+
+{% form_theme registrationForm 'bootstrap_5_layout.html.twig' %}
+
+{% block title %}Sign up — Swaply{% endblock %}
+
+{% block body %}
+    <div class="container py-5">
+        <div class="card-soft mx-auto p-4 p-md-5" style="max-width: 680px;">
+            <h1 class="h3 fw-bold mb-1">Create your account</h1>
+            <p class="text-muted mb-4">Join Swaply and start trading across Tunisia.</p>
+
+            {{ form_start(registrationForm) }}
+                <div class="row g-3">
+                    <div class="col-md-6">{{ form_row(registrationForm.firstName) }}</div>
+                    <div class="col-md-6">{{ form_row(registrationForm.lastName) }}</div>
+                    <div class="col-md-6">{{ form_row(registrationForm.username) }}</div>
+                    <div class="col-md-6">{{ form_row(registrationForm.phone) }}</div>
+                    <div class="col-12">{{ form_row(registrationForm.email) }}</div>
+                    <div class="col-md-6">{{ form_row(registrationForm.governorate) }}</div>
+                    <div class="col-md-6">{{ form_row(registrationForm.city) }}</div>
+                    <div class="col-md-6">{{ form_row(registrationForm.plainPassword.first) }}</div>
+                    <div class="col-md-6">{{ form_row(registrationForm.plainPassword.second) }}</div>
+                    <div class="col-12">{{ form_row(registrationForm.agreeTerms) }}</div>
+                </div>
+                <button type="submit" class="btn btn-brand w-100 py-2 fw-semibold mt-4">Create account</button>
+            {{ form_end(registrationForm) }}
+
+            <p class="text-center small mt-4 mb-0">Already registered? <a href="{{ path('app_login') }}">Log in</a></p>
+        </div>
+    </div>
+{% endblock %}

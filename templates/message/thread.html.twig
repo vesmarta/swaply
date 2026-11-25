@@ -1,0 +1,52 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Chat with {{ other.username }} — Swaply{% endblock %}
+
+{% block body %}
+    <div class="container py-4" style="max-width: 860px;">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small">
+                <li class="breadcrumb-item"><a href="{{ path('app_messages') }}">Messages</a></li>
+                <li class="breadcrumb-item active" aria-current="page">@{{ other.username }}</li>
+            </ol>
+        </nav>
+
+        <div class="card-soft overflow-hidden">
+            <div class="d-flex align-items-center gap-3 border-bottom p-3">
+                <div class="feature-icon flex-shrink-0">{{ other.fullName|slice(0, 1)|upper }}</div>
+                <div class="flex-grow-1">
+                    <div class="fw-semibold">{{ other.fullName }} <span class="small text-muted">@{{ other.username }}</span></div>
+                    <div class="small text-muted">about <a href="{{ path('app_listing_show', {id: conversation.listing.id}) }}" class="text-decoration-none">{{ conversation.listing.title }}</a></div>
+                </div>
+                <a href="{{ path('app_listing_show', {id: conversation.listing.id}) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-box-arrow-up-right me-1"></i>View listing</a>
+            </div>
+
+            <div class="p-3" style="height: 420px; overflow-y: auto; background: var(--bs-tertiary-bg);" id="chatWindow">
+                {% if messages is empty %}
+                    <div class="text-center text-muted small py-5">Start the conversation — say hello or ask about the item.</div>
+                {% endif %}
+                {% for message in messages %}
+                    <div class="d-flex mb-2 {{ message.sender == app.user ? 'justify-content-end' : 'justify-content-start' }}">
+                        <div class="rounded-3 px-3 py-2 small {{ message.sender == app.user ? 'text-bg-primary' : 'bg-white border' }}" style="max-width: 75%;">
+                            <div style="white-space: pre-line;">{{ message.body }}</div>
+                            <div class="text-end mt-1" style="font-size: .7rem; opacity: .7;">{{ message.createdAt|date('d M H:i') }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+
+            <form method="post" action="{{ path('app_message_send', {id: conversation.id}) }}" class="border-top p-3">
+                <input type="hidden" name="_token" value="{{ csrf_token('message_send_' ~ conversation.id) }}">
+                <div class="d-flex gap-2 align-items-end">
+                    <textarea name="body" rows="2" maxlength="2000" class="form-control" placeholder="Write a message…" required></textarea>
+                    <button type="submit" class="btn btn-brand flex-shrink-0"><i class="bi bi-send me-1"></i>Send</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const chat = document.getElementById('chatWindow');
+        if (chat) { chat.scrollTop = chat.scrollHeight; }
+    </script>
+{% endblock %}

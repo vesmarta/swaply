@@ -1,0 +1,27 @@
+{% set other = role == 'received' ? offer.sender : offer.receiver %}
+{% set payer = offer.cashDirection.value == 'requester_pays' ? offer.sender : (offer.cashDirection.value == 'owner_pays' ? offer.receiver : null) %}
+<div class="d-flex flex-wrap align-items-center gap-3 p-3 {{ not last ? 'border-bottom' : '' }}">
+    <div class="flex-grow-1" style="min-width: 260px;">
+        <div class="fw-semibold">
+            {% if role == 'received' %}
+                {{ other.fullName }} wants
+            {% else %}
+                You proposed
+            {% endif %}
+            <a href="{{ path('app_listing_show', {id: offer.listing.id}) }}" class="text-decoration-none">{{ offer.listing.title }}</a>
+        </div>
+        <div class="small text-muted">
+            {% if offer.offeredListing %}
+                In exchange for <a href="{{ path('app_listing_show', {id: offer.offeredListing.id}) }}" class="text-decoration-none">{{ offer.offeredListing.title }}</a>
+            {% else %}
+                Cash-only offer
+            {% endif %}
+            {% if payer %}
+                · {% if payer == app.user %}You pay{% else %}They pay{% endif %} {{ offer.cashAmountMillimes|tnd }} TND
+            {% endif %}
+        </div>
+        <div class="small text-muted">{{ offer.createdAt|date('d M Y H:i') }}</div>
+    </div>
+    <span class="badge text-bg-{{ offer.status.badge }}">{{ offer.status.label }}</span>
+    <a class="btn btn-sm btn-outline-secondary" href="{{ path('app_offer_show', {id: offer.id}) }}">Open</a>
+</div>

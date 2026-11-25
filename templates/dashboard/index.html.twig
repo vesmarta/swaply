@@ -1,0 +1,138 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard — Swaply{% endblock %}
+
+{% block body %}
+    <div class="container py-4 py-lg-5">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <h1 class="h3 fw-bold mb-1">Hello, {{ app.user.firstName }}</h1>
+                <p class="text-muted mb-0">Member since {{ app.user.createdAt|date('d/m/Y') }}</p>
+            </div>
+            {% if app.user.isVerified %}
+                <span class="badge text-bg-success px-3 py-2"><i class="bi bi-patch-check me-1"></i>Verified account</span>
+            {% else %}
+                <a href="{{ path('app_resend_verification') }}" class="btn btn-warning btn-sm px-3">
+                    <i class="bi bi-envelope-exclamation me-1"></i>Verify your email
+                </a>
+            {% endif %}
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-lg">
+                <a href="{{ path('app_my_listings') }}" class="card-soft p-3 h-100 d-block text-decoration-none text-dark">
+                    <div class="text-muted small text-uppercase fw-semibold">Active listings</div>
+                    <div class="display-6 fw-bold">{{ activeListings }}</div>
+                </a>
+            </div>
+            <div class="col-6 col-lg">
+                <a href="{{ path('app_offers') }}" class="card-soft p-3 h-100 d-block text-decoration-none text-dark">
+                    <div class="text-muted small text-uppercase fw-semibold">Offers awaiting you</div>
+                    <div class="display-6 fw-bold {{ awaitingOffers > 0 ? 'text-warning' : '' }}">{{ awaitingOffers }}</div>
+                </a>
+            </div>
+            <div class="col-6 col-lg">
+                <a href="{{ path('app_purchases') }}" class="card-soft p-3 h-100 d-block text-decoration-none text-dark">
+                    <div class="text-muted small text-uppercase fw-semibold">Open purchases</div>
+                    <div class="display-6 fw-bold">{{ openPurchases }}</div>
+                </a>
+            </div>
+            <div class="col-6 col-lg">
+                <a href="{{ path('app_messages') }}" class="card-soft p-3 h-100 d-block text-decoration-none text-dark">
+                    <div class="text-muted small text-uppercase fw-semibold">Unread messages</div>
+                    <div class="display-6 fw-bold {{ unreadMessages > 0 ? 'text-primary' : '' }}">{{ unreadMessages }}</div>
+                </a>
+            </div>
+            <div class="col-6 col-lg">
+                <div class="card-soft p-3 h-100">
+                    <div class="text-muted small text-uppercase fw-semibold">My rating</div>
+                    <div class="display-6 fw-bold">{{ rating.count > 0 ? rating.avg : '—' }}</div>
+                    {% if rating.count > 0 %}
+                        <div class="small">
+                            {% for i in 1..5 %}
+                                <i class="bi bi-star{{ i <= rating.avg|round ? '-fill text-warning' : ' text-muted' }}"></i>
+                            {% endfor %}
+                            <span class="text-muted">({{ rating.count }})</span>
+                        </div>
+                    {% else %}
+                        <div class="small text-muted">No reviews yet</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="card-soft h-100 p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="h6 text-uppercase text-muted fw-semibold mb-0">My account</h2>
+                        <a href="{{ path('app_profile') }}" class="small text-decoration-none"><i class="bi bi-pencil-square me-1"></i>Edit profile</a>
+                    </div>
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="d-flex justify-content-between py-2 border-bottom">
+                            <span class="text-muted">Username</span>
+                            <span class="fw-semibold">{{ app.user.username }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between py-2 border-bottom">
+                            <span class="text-muted">Full name</span>
+                            <span class="fw-semibold">{{ app.user.fullName }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between py-2 border-bottom">
+                            <span class="text-muted">Email</span>
+                            <span class="fw-semibold text-break ms-3 text-end">{{ app.user.email }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between py-2 border-bottom">
+                            <span class="text-muted">Phone</span>
+                            <span class="fw-semibold">{{ app.user.phone }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between py-2">
+                            <span class="text-muted">Location</span>
+                            <span class="fw-semibold text-end ms-3">
+                                {% if app.user.city or app.user.governorate %}
+                                    {{ [app.user.city, app.user.governorate]|filter(v => v)|join(', ') }}
+                                {% else %}
+                                    Not set
+                                {% endif %}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-lg-8">
+                <div class="card-soft h-100 p-4">
+                    <h2 class="h6 text-uppercase text-muted fw-semibold mb-3">Quick actions</h2>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <a href="{{ path('app_listing_new') }}" class="border rounded-3 p-3 h-100 d-block text-decoration-none text-dark">
+                                <i class="bi bi-plus-square fs-4 text-primary"></i>
+                                <div class="fw-semibold mt-2">List an item</div>
+                                <div class="small text-muted">Publish something to swap or sell.</div>
+                            </a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a href="{{ path('app_marketplace') }}" class="border rounded-3 p-3 h-100 d-block text-decoration-none text-dark">
+                                <i class="bi bi-grid fs-4 text-primary"></i>
+                                <div class="fw-semibold mt-2">Browse marketplace</div>
+                                <div class="small text-muted">Find your next swap or purchase.</div>
+                            </a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a href="{{ path('app_offers') }}" class="border rounded-3 p-3 h-100 d-block text-decoration-none text-dark">
+                                <i class="bi bi-arrow-left-right fs-4 text-primary"></i>
+                                <div class="fw-semibold mt-2">My offers</div>
+                                <div class="small text-muted">Negotiations you sent and received.</div>
+                            </a>
+                        </div>
+                        <div class="col-sm-6">
+                            <a href="{{ path('app_favorites') }}" class="border rounded-3 p-3 h-100 d-block text-decoration-none text-dark">
+                                <i class="bi bi-heart fs-4 text-primary"></i>
+                                <div class="fw-semibold mt-2">Favorites</div>
+                                <div class="small text-muted">Items you saved for later.</div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

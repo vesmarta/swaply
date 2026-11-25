@@ -1,0 +1,47 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Messages — Swaply{% endblock %}
+
+{% block body %}
+    <div class="container py-4" style="max-width: 860px;">
+        <h1 class="h3 fw-bold mb-1">Messages</h1>
+        <p class="text-muted small mb-4">Conversations with buyers and sellers, tied to their listings.</p>
+
+        {% if rows is empty %}
+            <div class="card-soft p-5 text-center">
+                <i class="bi bi-chat-dots fs-1 text-muted d-block mb-2"></i>
+                <p class="text-muted mb-3">No conversations yet.</p>
+                <a href="{{ path('app_marketplace') }}" class="btn btn-outline-secondary">Browse the marketplace</a>
+            </div>
+        {% else %}
+            <div class="card-soft p-0 overflow-hidden">
+                <div class="list-group list-group-flush">
+                    {% for row in rows %}
+                        <a href="{{ path('app_message_thread', {id: row.conversation.id}) }}" class="list-group-item list-group-item-action py-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="feature-icon flex-shrink-0">{{ row.other.fullName|slice(0, 1)|upper }}</div>
+                                <div class="flex-grow-1 min-w-0">
+                                    <div class="d-flex justify-content-between align-items-center gap-2">
+                                        <span class="fw-semibold">{{ row.other.fullName }} <span class="small text-muted">@{{ row.other.username }}</span></span>
+                                        <span class="small text-muted flex-shrink-0">{{ row.conversation.lastMessageAt|date('d M H:i') }}</span>
+                                    </div>
+                                    <div class="small text-muted text-truncate">
+                                        about <em>{{ row.conversation.listing.title }}</em>
+                                    </div>
+                                    {% if row.lastMessage %}
+                                        <div class="small text-truncate {{ row.unread > 0 ? 'fw-semibold text-dark' : 'text-muted' }}">
+                                            {{ row.lastMessage.sender == app.user ? 'You: ' : '' }}{{ row.lastMessage.body }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                {% if row.unread > 0 %}
+                                    <span class="badge rounded-pill text-bg-primary">{{ row.unread }}</span>
+                                {% endif %}
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

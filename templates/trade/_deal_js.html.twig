@@ -1,0 +1,164 @@
+<script>
+(function () {
+    var root = document.querySelector('[data-deal]');
+    if (!root) { return; }
+
+    var viewer = root.dataset.cashView || 'sender';
+    var staticGiveTitle = root.dataset.giveTitle || null;
+    var staticGivePrice = root.dataset.givePrice === '' || root.dataset.givePrice === undefined
+        ? null
+        : parseInt(root.dataset.givePrice, 10);
+    var targetTitle = root.dataset.targetTitle || '';
+    var targetPrice = root.dataset.targetPrice === '' || root.dataset.targetPrice === undefined
+        ? null
+        : parseInt(root.dataset.targetPrice, 10);
+
+    var hasPicker = !!root.querySelector('[data-item-title]');
+    var amountInput = root.querySelector('[data-deal-amount]');
+    var amountWrap = root.querySelector('[data-amount-wrap]');
+    var giveOut = root.querySelector('[data-preview-give]');
+    var getOut = root.querySelector('[data-preview-get]');
+    var noteOut = root.querySelector('[data-preview-note]');
+    var netOut = root.querySelector('[data-preview-net]');
+
+    var pickerRows = Array.prototype.slice.call(document.querySelectorAll('[data-pick]'));
+    var tile = root.querySelector('.pick-tile');
+    var tileEmpty = root.querySelector('[data-pick-empty]');
+    var tileChosen = root.querySelector('[data-pick-chosen]');
+    var tileImage = root.querySelector('[data-pick-image]');
+    var tileNoimg = root.querySelector('[data-pick-noimg]');
+    var tileTitle = root.querySelector('[data-pick-title]');
+    var tileMeta = root.querySelector('[data-pick-meta]');
+
+    function tnd(millimes) {
+        return (millimes / 1000).toFixed(3) + ' TND';
+    }
+
+    function selected(selector) {
+        return root.querySelector(selector + ':checked');
+    }
+
+    function updatePicker() {
+        var pick = selected('[data-item-title]');
+        var value = pick ? pick.value : null;
+
+        pickerRows.forEach(function (row) {
+            row.classList.toggle('is-selected', row.dataset.pick === value);
+        });
+
+        if (tile) {
+            tile.classList.toggle('has-item', !!pick);
+        }
+
+        if (!tileEmpty) { return; }
+
+        if (!pick) {
+            tileEmpty.classList.remove('d-none');
+            tileChosen.classList.add('d-none');
+            tileChosen.classList.remove('d-flex');
+            return;
+        }
+
+        tileEmpty.classList.add('d-none');
+        tileChosen.classList.remove('d-none');
+        tileChosen.classList.add('d-flex');
+
+        tileTitle.textContent = pick.dataset.itemTitle;
+
+        var price = pick.dataset.itemPrice !== '' ? parseInt(pick.dataset.itemPrice, 10) : null;
+        var cond = pick.dataset.itemCond || '';
+        tileMeta.textContent = (price ? tnd(price) : 'Swap only') + (cond ? ' · ' + cond : '');
+
+        if (pick.dataset.itemImage) {
+            tileImage.src = pick.dataset.itemImage;
+            tileImage.classList.remove('d-none');
+            tileNoimg.classList.add('d-none');
+        } else {
+            tileImage.classList.add('d-none');
+            tileNoimg.classList.remove('d-none');
+        }
+    }
+
+    pickerRows.forEach(function (row) {
+        row.addEventListener('click', function () {
+            var input = root.querySelector('input[type="radio"][value="' + row.dataset.pick + '"]');
+            if (!input) { return; }
+
+            input.click();
+
+            var modalEl = document.getElementById('itemPickerModal');
+            var modal = window.bootstrap ? window.bootstrap.Modal.getInstance(modalEl) : null;
+            if (modal) { modal.hide(); }
+        });
+    });
+
+    function render() {
+        var pick = hasPicker ? selected('[data-item-title]') : null;
+        var itemTitle = pick ? pick.dataset.itemTitle : staticGiveTitle;
+        var itemValue = pick
+            ? (pick.dataset.itemPrice !== '' ? parseInt(pick.dataset.itemPrice, 10) : null)
+            : staticGivePrice;
+
+        var dirInput = selected('[data-cash-direction]');
+        var dir = dirInput ? dirInput.dataset.cashDirection : 'none';
+
+        var raw = amountInput ? amountInput.value.replace(/\s/g, '').replace(',', '.') : '';
+        var cash = dir === 'none' ? 0 : Math.round((parseFloat(raw) || 0) * 1000);
+
+        var iPay = (dir === 'requester_pays' && viewer === 'sender') || (dir === 'owner_pays' && viewer === 'receiver');
+
+        if (amountWrap) {
+            amountWrap.classList.toggle('d-none', dir === 'none');
+        }
+
+        if (giveOut) {
+            if (itemTitle) {
+                giveOut.textContent = itemTitle + (itemValue ? ' · ' + tnd(itemValue) : '');
+                giveOut.classList.remove('text-muted');
+            } else {
+                giveOut.textContent = 'Choose an item from your uploads';
+                giveOut.classList.add('text-muted');
+            }
+        }
+
+        if (getOut) {
+            getOut.textContent = targetTitle + (targetPrice ? ' · ' + tnd(targetPrice) : '');
+        }
+
+        updatePicker();
+
+        if (!noteOut) { return; }
+
+        var youGive = itemValue || 0;
+        var youGet = targetPrice || 0;
+
+        if (dir === 'none') {
+            noteOut.textContent = 'Straight swap — no money changes hands.';
+        } else if (iPay) {
+            noteOut.innerHTML = 'You pay <strong>' + tnd(cash) + '</strong> cash on top.';
+            youGive += cash;
+        } else {
+            noteOut.innerHTML = 'They pay you <strong>' + tnd(cash) + '</strong> cash on top.';
+            youGet += cash;
+        }
+
+        if (netOut) {
+            if (dir === 'none') {
+                netOut.classList.add('d-none');
+            } else {
+                var diff = youGet - youGive;
+                netOut.classList.remove('d-none');
+                netOut.textContent = diff === 0
+                    ? 'Balanced deal'
+                    : (diff > 0 ? 'In your favour by ' + tnd(diff) : 'You cover ' + tnd(-diff) + ' more');
+                netOut.classList.toggle('text-success', diff >= 0);
+                netOut.classList.toggle('text-warning-emphasis', diff < 0);
+            }
+        }
+    }
+
+    root.addEventListener('change', render);
+    if (amountInput) { amountInput.addEventListener('input', render); }
+    render();
+})();
+</script>

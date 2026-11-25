@@ -1,0 +1,101 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Moderation — Swaply{% endblock %}
+
+{% block body %}
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h1 class="h3 fw-bold mb-0"><i class="bi bi-shield-check me-1"></i>Moderation</h1>
+                <p class="text-muted small mb-0">Approve new listings and monitor marketplace health.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ path('app_admin_users') }}" class="btn btn-outline-secondary"><i class="bi bi-people me-1"></i>Members</a>
+                <a href="{{ path('app_marketplace') }}" class="btn btn-outline-secondary"><i class="bi bi-grid me-1"></i>View marketplace</a>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-4 col-xl">
+                <div class="card-soft p-3 h-100">
+                    <div class="text-muted small text-uppercase fw-semibold">Members</div>
+                    <div class="display-6 fw-bold">{{ stats.users }}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl">
+                <div class="card-soft p-3 h-100">
+                    <div class="text-muted small text-uppercase fw-semibold">Active listings</div>
+                    <div class="display-6 fw-bold">{{ stats.activeListings }}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl">
+                <div class="card-soft p-3 h-100">
+                    <div class="text-muted small text-uppercase fw-semibold">Awaiting approval</div>
+                    <div class="display-6 fw-bold {{ stats.pendingListings > 0 ? 'text-warning' : '' }}">{{ stats.pendingListings }}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl">
+                <div class="card-soft p-3 h-100">
+                    <div class="text-muted small text-uppercase fw-semibold">Completed swaps</div>
+                    <div class="display-6 fw-bold">{{ stats.completedTrades }}</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-xl">
+                <div class="card-soft p-3 h-100">
+                    <div class="text-muted small text-uppercase fw-semibold">Completed sales</div>
+                    <div class="display-6 fw-bold">{{ stats.completedPurchases }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-soft p-4">
+            <h2 class="h6 fw-bold mb-3">Listings awaiting approval</h2>
+
+            {% if pending is empty %}
+                <div class="text-center text-muted small py-4"><i class="bi bi-check2-circle fs-3 d-block mb-2"></i>Nothing in the queue — all caught up.</div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Item</th>
+                                <th>Seller</th>
+                                <th>Category</th>
+                                <th class="text-end">Price</th>
+                                <th>Submitted</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for listing in pending %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ path('app_listing_show', {id: listing.id}) }}" class="fw-semibold text-decoration-none">{{ listing.title }}</a>
+                                        <div class="small text-muted">{{ listing.type.label }} · {{ listing.condition.label }} · {{ listing.governorate }}</div>
+                                    </td>
+                                    <td class="small">@{{ listing.seller.username }}</td>
+                                    <td class="small">{{ listing.category.name }}</td>
+                                    <td class="text-end small">{{ listing.priceMillimes ? listing.priceMillimes|tnd ~ ' TND' : '—' }}</td>
+                                    <td class="small text-muted">{{ listing.createdAt|date('d M Y H:i') }}</td>
+                                    <td class="text-end">
+                                        <div class="d-flex gap-2 justify-content-end align-items-start">
+                                            <form method="post" action="{{ path('app_admin_listing_approve', {id: listing.id}) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('admin_listing_' ~ listing.id) }}">
+                                                <button type="submit" class="btn btn-sm btn-success"><i class="bi bi-check2 me-1"></i>Approve</button>
+                                            </form>
+                                            <form method="post" action="{{ path('app_admin_listing_reject', {id: listing.id}) }}" class="d-flex gap-1">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('admin_listing_' ~ listing.id) }}">
+                                                <input type="text" name="reason" class="form-control form-control-sm" placeholder="Reason (optional)" style="max-width: 160px;">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg me-1"></i>Reject</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

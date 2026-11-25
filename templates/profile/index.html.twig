@@ -1,0 +1,81 @@
+{% extends 'base.html.twig' %}
+
+{% form_theme profileForm 'bootstrap_5_layout.html.twig' %}
+{% form_theme passwordForm 'bootstrap_5_layout.html.twig' %}
+
+{% block title %}My profile — Swaply{% endblock %}
+
+{% block body %}
+    <div class="container py-4 py-lg-5">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+            <div>
+                <h1 class="h3 fw-bold mb-1">My profile</h1>
+                <p class="text-muted mb-0">Manage your account details and password.</p>
+            </div>
+            <a href="{{ path('app_dashboard') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back to dashboard</a>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="card-soft p-4 h-100">
+                    <h2 class="h6 text-uppercase text-muted fw-semibold mb-3">Account details</h2>
+
+                    <div class="d-flex justify-content-between align-items-center py-2 mb-3 border-bottom small">
+                        <span class="text-muted">Email</span>
+                        <span class="fw-semibold text-break ms-3 text-end">{{ app.user.email }}
+                            {% if app.user.isVerified %}
+                                <i class="bi bi-patch-check-fill text-success ms-1" title="Verified"></i>
+                            {% endif %}
+                        </span>
+                    </div>
+
+                    {{ form_start(profileForm) }}
+                        {{ form_errors(profileForm) }}
+                        <div class="row g-3">
+                            <div class="col-md-6">{{ form_row(profileForm.firstName) }}</div>
+                            <div class="col-md-6">{{ form_row(profileForm.lastName) }}</div>
+                            <div class="col-md-6">{{ form_row(profileForm.username) }}</div>
+                            <div class="col-md-6">{{ form_row(profileForm.phone) }}</div>
+                            <div class="col-md-6">{{ form_row(profileForm.governorate) }}</div>
+                            <div class="col-md-6">{{ form_row(profileForm.city) }}</div>
+                        </div>
+                        <button type="submit" class="btn btn-brand mt-4"><i class="bi bi-check2 me-1"></i>Save changes</button>
+                    {{ form_end(profileForm) }}
+
+                    <p class="small text-muted mt-3 mb-0">To change your email address, contact the platform administrators.</p>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card-soft p-4">
+                    <h2 class="h6 text-uppercase text-muted fw-semibold mb-3">Change password</h2>
+
+                    {{ form_start(passwordForm) }}
+                        {{ form_row(passwordForm.currentPassword) }}
+                        {{ form_row(passwordForm.newPassword.first) }}
+                        {{ form_row(passwordForm.newPassword.second) }}
+                        <button type="submit" class="btn btn-outline-primary mt-3"><i class="bi bi-shield-lock me-1"></i>Update password</button>
+                    {{ form_end(passwordForm) }}
+                </div>
+
+                <div class="card-soft p-4 mt-4">
+                    <h2 class="h6 text-uppercase text-muted fw-semibold mb-3">Account status</h2>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="d-flex justify-content-between py-2 border-bottom">
+                            <span class="text-muted">Member since</span>
+                            <span class="fw-semibold">{{ app.user.createdAt|date('d/m/Y') }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between py-2 border-bottom">
+                            <span class="text-muted">Email verified</span>
+                            <span class="fw-semibold {{ app.user.isVerified ? 'text-success' : 'text-warning' }}">{{ app.user.isVerified ? 'Yes' : 'No' }}</span>
+                        </li>
+                        <li class="d-flex justify-content-between py-2">
+                            <span class="text-muted">Status</span>
+                            <span class="fw-semibold text-success">Active</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

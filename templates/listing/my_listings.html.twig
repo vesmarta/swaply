@@ -1,0 +1,81 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}My listings — Swaply{% endblock %}
+
+{% block body %}
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+            <div>
+                <h1 class="h3 fw-bold mb-1">My listings</h1>
+                <p class="text-muted mb-0">{{ listings|length }} listing{{ listings|length == 1 ? '' : 's' }}</p>
+            </div>
+            <a href="{{ path('app_listing_new') }}" class="btn btn-brand"><i class="bi bi-plus-lg me-1"></i>List an item</a>
+        </div>
+
+        {% if listings is empty %}
+            <div class="card-soft p-5 text-center">
+                <i class="bi bi-box-seam fs-1 text-secondary d-block mb-3"></i>
+                <h2 class="h5 fw-semibold">You have no listings yet</h2>
+                <p class="text-muted mb-3">Publish your first item and start swapping.</p>
+                <a class="btn btn-brand" href="{{ path('app_listing_new') }}">List an item</a>
+            </div>
+        {% else %}
+            {% set badgeColors = {
+                'pending': 'warning text-dark',
+                'active': 'success',
+                'rejected': 'danger',
+                'reserved': 'info text-dark',
+                'traded': 'secondary',
+                'sold': 'secondary',
+                'withdrawn': 'dark'
+            } %}
+            <div class="card-soft p-2 p-md-3">
+                {% for listing in listings %}
+                    <div class="d-flex flex-wrap align-items-center gap-3 p-3 {{ not loop.last ? 'border-bottom' : '' }}">
+                        {% if listing.coverImage %}
+                            <img src="{{ asset('uploads/listings/' ~ listing.coverImage.filename) }}" alt="" class="rounded border" style="width: 72px; height: 72px; object-fit: cover;">
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center bg-light text-secondary rounded border" style="width: 72px; height: 72px;">
+                                <i class="bi bi-image"></i>
+                            </div>
+                        {% endif %}
+
+                        <div class="flex-grow-1" style="min-width: 220px;">
+                            <a href="{{ path('app_listing_show', {id: listing.id}) }}" class="fw-semibold text-dark text-decoration-none">{{ listing.title }}</a>
+                            <div class="small text-muted">
+                                {{ listing.category.name }} · {{ listing.governorate }}
+                                · {% if listing.priceMillimes %}{{ listing.priceMillimes|tnd }} TND{% else %}Swap only{% endif %}
+                                · <i class="bi bi-eye"></i> {{ listing.viewCount }}
+                            </div>
+                            <div class="mt-1">
+                                <span class="badge text-bg-{{ badgeColors[listing.status.value] ?? 'secondary' }}">{{ listing.status.label }}</span>
+                                {% if listing.status.value == 'rejected' and listing.rejectionReason %}
+                                    <span class="small text-danger ms-1">{{ listing.rejectionReason }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <a href="{{ path('app_listing_show', {id: listing.id}) }}" class="btn btn-sm btn-outline-secondary">View</a>
+                            {% if listing.status.value in ['pending', 'active', 'rejected'] %}
+                                <a href="{{ path('app_listing_edit', {id: listing.id}) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                            {% endif %}
+                            {% if listing.status.value == 'active' %}
+                                <form method="post" action="{{ path('app_listing_withdraw', {id: listing.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('listing_action_' ~ listing.id) }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" onclick="return confirm('Withdraw this listing?')">Withdraw</button>
+                                </form>
+                            {% endif %}
+                            {% if listing.status.value in ['pending', 'rejected', 'withdrawn'] %}
+                                <form method="post" action="{{ path('app_listing_delete', {id: listing.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('listing_action_' ~ listing.id) }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this listing permanently?')">Delete</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

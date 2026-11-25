@@ -1,0 +1,48 @@
+{% extends 'base.html.twig' %}
+
+{% form_theme form 'bootstrap_5_layout.html.twig' %}
+
+{% block title %}Buy {{ listing.title }} — Swaply{% endblock %}
+
+{% block body %}
+    <div class="container py-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small">
+                <li class="breadcrumb-item"><a href="{{ path('app_home') }}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ path('app_listing_show', {id: listing.id}) }}">{{ listing.title }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Buy now</li>
+            </ol>
+        </nav>
+
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-6">
+                <div class="card-soft p-4 p-md-5">
+                    <h1 class="h4 fw-bold mb-1">Buy this item</h1>
+                    <p class="text-muted small mb-4">Send a purchase request to the seller. The item is reserved only once they accept.</p>
+
+                    <div class="d-flex align-items-center gap-3 border rounded-3 p-3 mb-4">
+                        {% if listing.coverImage %}
+                            <img src="{{ asset('uploads/listings/' ~ listing.coverImage.filename) }}" alt="{{ listing.title }}" class="rounded-2" style="width: 84px; height: 84px; object-fit: cover;">
+                        {% else %}
+                            <div class="d-flex align-items-center justify-content-center bg-light rounded-2 text-secondary" style="width: 84px; height: 84px;"><i class="bi bi-image fs-3"></i></div>
+                        {% endif %}
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">{{ listing.title }}</div>
+                            <div class="small text-muted">Sold by @{{ listing.seller.username }} · {{ listing.governorate }}</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold fs-5">{{ listing.priceMillimes|tnd }} <span class="small text-muted">TND</span></div>
+                        </div>
+                    </div>
+
+                    {{ form_start(form) }}
+                        {{ form_row(form.message) }}
+                        <button type="submit" class="btn btn-brand w-100 py-2 fw-semibold mt-3"><i class="bi bi-bag-check me-1"></i>Send purchase request</button>
+                    {{ form_end(form) }}
+
+                    <p class="small text-muted mt-3 mb-0"><i class="bi bi-shield-check me-1"></i>Payment is arranged directly with the seller at handover.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

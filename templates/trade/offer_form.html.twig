@@ -1,0 +1,178 @@
+{% extends 'base.html.twig' %}
+
+{% form_theme form 'bootstrap_5_layout.html.twig' %}
+
+{% block title %}Propose a swap — Swaply{% endblock %}
+
+{% macro item_thumb(listing, size) %}
+    {% if listing and listing.coverImage %}
+        <img src="{{ asset('uploads/listings/' ~ listing.coverImage.filename) }}" alt="{{ listing.title }}"
+             class="rounded-2 flex-shrink-0" style="width: {{ size }}px; height: {{ size }}px; object-fit: cover;">
+    {% else %}
+        <span class="rounded-2 bg-light d-inline-flex align-items-center justify-content-center flex-shrink-0 text-muted"
+              style="width: {{ size }}px; height: {{ size }}px;"><i class="bi bi-image"></i></span>
+    {% endif %}
+{% endmacro %}
+
+{% block body %}
+    <div class="container py-4 py-lg-5" data-deal
+         data-cash-view="sender"
+         data-target-title="{{ listing.title }}"
+         data-target-price="{{ listing.priceMillimes ?? '' }}">
+        <div class="row g-4">
+            <div class="col-lg-4 order-lg-2">
+                <div class="card-soft p-3 position-sticky" style="top: 1rem;">
+                    <div class="small text-uppercase text-muted fw-semibold mb-2">Deal summary</div>
+
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        {{ _self.item_thumb(listing, 40) }}
+                        <div class="small">
+                            <div class="fw-semibold">{{ listing.title }}</div>
+                            <div class="text-muted">from @{{ listing.seller.username }}</div>
+                        </div>
+                    </div>
+
+                    <div class="bg-light rounded-3 p-3 small">
+                        <div class="d-flex justify-content-between gap-2">
+                            <span class="text-muted">You give</span>
+                            <span class="fw-semibold text-end" data-preview-give>—</span>
+                        </div>
+                        <div class="d-flex justify-content-between gap-2 mt-1">
+                            <span class="text-muted">You get</span>
+                            <span class="fw-semibold text-end" data-preview-get>{{ listing.title }}</span>
+                        </div>
+                        <hr class="my-2">
+                        <div data-preview-note class="text-muted">Straight swap — no money changes hands.</div>
+                        <div data-preview-net class="small fw-semibold d-none mt-1"></div>
+                    </div>
+
+                    <div class="alert alert-light border small mt-3 mb-0">
+                        <i class="bi bi-info-circle me-1"></i>Cash is settled directly between members — Swaply never handles payments. Both sides confirm the handover before the trade is marked complete.
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8 order-lg-1">
+                <div class="card-soft p-4 p-md-5">
+                    <a href="{{ path('app_listing_show', {id: listing.id}) }}" class="small text-muted text-decoration-none"><i class="bi bi-arrow-left me-1"></i>Back to {{ listing.title }}</a>
+                    <h1 class="h3 fw-bold mt-2 mb-1">Propose a swap</h1>
+                    <p class="text-muted mb-4">Pick one of your items, add cash in either direction if the values don't line up, and send your offer.</p>
+
+                    {{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+                        {{ form_errors(form) }}
+
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-baseline mb-2">
+                                <span class="form-label mb-0">1 · What do you offer?</span>
+                                <span class="small text-muted">{{ my_listings|length }} uploaded item{{ my_listings|length > 1 ? 's' : '' }}</span>
+                            </div>
+                            {{ form_errors(form.offeredListing) }}
+
+                            <div class="d-none">
+                                {% for child in form.offeredListing %}
+                                    {{ form_widget(child) }}
+                                {% endfor %}
+                            </div>
+
+                            <div class="pick-tile">
+                                <div class="text-center p-3" data-pick-empty>
+                                    <i class="bi bi-collection fs-3 text-muted"></i>
+                                    <div class="fw-semibold mt-1">No item selected yet</div>
+                                    <div class="small text-muted mb-2">Open your uploaded items and pick the one to offer in this swap.</div>
+                                    <button type="button" class="btn btn-sm btn-brand" data-bs-toggle="modal" data-bs-target="#itemPickerModal">
+                                        <i class="bi bi-search me-1"></i>Open my items
+                                    </button>
+                                </div>
+
+                                <div class="d-none align-items-center gap-3 p-2" data-pick-chosen>
+                                    <img src="" alt="" class="rounded-2 flex-shrink-0 d-none" style="width: 64px; height: 64px; object-fit: cover;" data-pick-image>
+                                    <span class="rounded-2 bg-light d-inline-flex align-items-center justify-content-center flex-shrink-0 text-muted" style="width: 64px; height: 64px;" data-pick-noimg><i class="bi bi-image fs-4"></i></span>
+                                    <div class="flex-grow-1" style="min-width: 0;">
+                                        <div class="fw-semibold text-truncate" data-pick-title></div>
+                                        <div class="small text-muted" data-pick-meta></div>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#itemPickerModal">Change</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <span class="form-label d-block mb-2">2 · How do the values line up?</span>
+                            {{ form_errors(form.cashDirection) }}
+                            <div class="row g-2">
+                                {% for choice in form.cashDirection %}
+                                    {% set icon = choice.vars.value == 'none' ? 'bi-arrow-left-right' : (choice.vars.value == 'requester_pays' ? 'bi-cash-coin' : 'bi-wallet2') %}
+                                    {% set desc = choice.vars.value == 'none' ? 'Swap the items as they are.' : (choice.vars.value == 'requester_pays' ? "You'll transfer cash to the other member." : "You want cash from the other member.") %}
+                                    <div class="col-md-4">
+                                        {{ form_widget(choice) }}
+                                        <label class="cash-choice h-100" for="{{ choice.vars.id }}">
+                                            <i class="bi {{ icon }}"></i>
+                                            <span class="fw-semibold d-block small mt-1">{{ choice.vars.label }}</span>
+                                            <span class="text-muted d-block" style="font-size: .78rem;">{{ desc }}</span>
+                                        </label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="mb-4" data-amount-wrap>
+                            {{ form_label(form.cashAmountTnd) }}
+                            <div class="input-group">
+                                {{ form_widget(form.cashAmountTnd, {attr: {'data-deal-amount': ''}}) }}
+                                <span class="input-group-text">TND</span>
+                            </div>
+                            {{ form_help(form.cashAmountTnd) }}
+                            {{ form_errors(form.cashAmountTnd) }}
+                        </div>
+
+                        <div class="mb-4">
+                            {{ form_row(form.message) }}
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-brand px-4"><i class="bi bi-send me-1"></i>Send offer</button>
+                            <a class="btn btn-outline-secondary" href="{{ path('app_listing_show', {id: listing.id}) }}">Cancel</a>
+                        </div>
+                    {{ form_end(form) }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="itemPickerModal" tabindex="-1" aria-labelledby="itemPickerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <div>
+                        <h2 class="modal-title h6 mb-0" id="itemPickerModalLabel">My uploaded items</h2>
+                        <div class="small text-muted">Pick the item you want to offer in this swap.</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-2">
+                    <div class="list-group list-group-flush">
+                        {% for l in my_listings %}
+                            <button type="button" class="list-group-item list-group-item-action d-flex align-items-center gap-3 pick-row" data-pick="{{ l.id }}">
+                                {{ _self.item_thumb(l, 56) }}
+                                <span class="flex-grow-1" style="min-width: 0;">
+                                    <span class="fw-semibold d-block text-truncate">{{ l.title }}</span>
+                                    <span class="small text-muted d-block">
+                                        {% if l.priceMillimes %}{{ l.priceMillimes|tnd }} TND{% else %}Swap only{% endif %}
+                                        {% if l.condition %} · {{ l.condition.label }}{% endif %}
+                                    </span>
+                                </span>
+                                <i class="bi bi-check-circle-fill pick-row-check"></i>
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <span class="small text-muted">{{ my_listings|length }} active item{{ my_listings|length > 1 ? 's' : '' }}</span>
+                    <a class="btn btn-sm btn-outline-secondary" href="{{ path('app_listing_new') }}"><i class="bi bi-plus-lg me-1"></i>Upload a new item</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% include 'trade/_deal_js.html.twig' %}
+{% endblock %}

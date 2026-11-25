@@ -1,0 +1,262 @@
+{% extends 'base.html.twig' %}
+
+{% if counterForm %}{% form_theme counterForm 'bootstrap_5_layout.html.twig' %}{% endif %}
+
+{% block title %}Offer #{{ offer.id }} — Swaply{% endblock %}
+
+{% macro thumb(listing, size) %}
+    {% if listing and listing.coverImage %}
+        <img src="{{ asset('uploads/listings/' ~ listing.coverImage.filename) }}" alt="{{ listing.title }}"
+             class="rounded-2 flex-shrink-0" style="width: {{ size }}px; height: {{ size }}px; object-fit: cover;">
+    {% else %}
+        <span class="rounded-2 bg-light d-inline-flex align-items-center justify-content-center flex-shrink-0 text-muted"
+              style="width: {{ size }}px; height: {{ size }}px;"><i class="bi bi-image"></i></span>
+    {% endif %}
+{% endmacro %}
+
+{% macro swap_card(listing, who, username) %}
+    <div class="swap-item h-100">
+        {{ _self.thumb(listing, 58) }}
+        <div style="min-width: 0;">
+            <div class="small text-muted">{{ who }}</div>
+            {% if listing %}
+                <a href="{{ path('app_listing_show', {id: listing.id}) }}" class="fw-semibold text-dark text-decoration-none d-block text-truncate">{{ listing.title }}</a>
+                <div class="small text-muted">@{{ username }}{% if listing.priceMillimes %} · {{ listing.priceMillimes|tnd }} TND{% endif %}</div>
+            {% else %}
+                <div class="fw-semibold text-muted">—</div>
+            {% endif %}
+        </div>
+    </div>
+{% endmacro %}
+
+{% block body %}
+    {% set cashPayer = offer.cashDirection.value == 'requester_pays' ? offer.sender : (offer.cashDirection.value == 'owner_pays' ? offer.receiver : null) %}
+    {% set viewerIsSender = offer.sender == app.user %}
+    {% set counterGive = viewerIsSender ? offer.offeredListing : offer.listing %}
+    {% set counterGet = viewerIsSender ? offer.listing : offer.offeredListing %}
+
+    <div class="container py-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small">
+                <li class="breadcrumb-item"><a href="{{ path('app_home') }}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ path('app_offers') }}">My offers</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Offer #{{ offer.id }}</li>
+            </ol>
+        </nav>
+
+        {% if offer.status.value == 'completed' %}
+            <div class="alert alert-success"><i class="bi bi-check2-circle me-2"></i>This trade is completed — both items are now marked as traded.</div>
+        {% elseif offer.status.value == 'accepted' %}
+            <div class="alert alert-info"><i class="bi bi-handshake me-2"></i>A deal was agreed. Both items are reserved until both sides confirm the handover.</div>
+        {% elseif offer.status.value == 'expired' %}
+            <div class="alert alert-secondary"><i class="bi bi-hourglass-bottom me-2"></i>This offer expired before it was answered.</div>
+        {% elseif offer.status.value == 'rejected' %}
+            <div class="alert alert-danger"><i class="bi bi-x-octagon me-2"></i>This offer was declined.</div>
+        {% elseif offer.status.value == 'cancelled' %}
+            <div class="alert alert-secondary"><i class="bi bi-slash-circle me-2"></i>This offer was cancelled by its author.</div>
+        {% endif %}
+
+        <div class="card-soft p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                <div>
+                    <div class="small text-muted">Offer #{{ offer.id }}</div>
+                    <h1 class="h4 fw-bold mb-0">Swap negotiation</h1>
+                </div>
+                <span class="badge text-bg-{{ offer.status.badge }}">{{ offer.status.label }}</span>
+            </div>
+
+            <div class="row g-3 align-items-center">
+                <div class="col-md-5">
+                    {{ _self.swap_card(offer.offeredListing, 'Requester gives', offer.sender.username) }}
+                </div>
+                <div class="col-md-2 text-center">
+                    {% if cashPayer %}
+                        <div class="cash-badge">
+                            <i class="bi bi-cash-coin fs-4"></i>
+                            <div class="fw-bold">{{ offer.cashAmountMillimes|tnd }} TND</div>
+                            <div class="small text-muted">@{{ cashPayer.username }} pays</div>
+                        </div>
+                    {% else %}
+                        <i class="bi bi-arrow-left-right fs-3 text-muted d-block"></i>
+                        <div class="small text-muted">no cash</div>
+                    {% endif %}
+                </div>
+                <div class="col-md-5">
+                    {{ _self.swap_card(offer.listing, 'Owner gives', offer.receiver.username) }}
+                </div>
+            </div>
+
+            <div class="small text-muted mt-3">
+                Between <strong>@{{ offer.sender.username }}</strong> (requester) and <strong>@{{ offer.receiver.username }}</strong> (owner of the requested item).
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="card-soft p-4">
+                    <h2 class="h6 fw-bold mb-3">Negotiation history</h2>
+
+                    {% for entry in chain %}
+                        {% set payer = entry.cashDirection.value == 'requester_pays' ? entry.sender : (entry.cashDirection.value == 'owner_pays' ? entry.receiver : null) %}
+                        <div class="timeline-entry {{ loop.last ? 'is-current' : '' }}">
+                            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                                <div class="small">
+                                    <span class="fw-semibold">{{ entry.proposedBy == app.user ? 'You' : entry.proposedBy.fullName }}</span>
+                                    <span class="text-muted">proposed · {{ entry.createdAt|date('d M Y H:i') }}</span>
+                                </div>
+                                <span class="badge text-bg-{{ entry.status.badge }}">{{ entry.status.label }}</span>
+                            </div>
+
+                            <div class="small d-flex flex-column gap-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    {{ _self.thumb(entry.offeredListing, 30) }}
+                                    <span>
+                                        <i class="bi bi-box-arrow-right text-primary me-1"></i>
+                                        <strong>@{{ entry.sender.username }}</strong> gives
+                                        {% if entry.offeredListing %}
+                                            <a href="{{ path('app_listing_show', {id: entry.offeredListing.id}) }}" class="text-decoration-none">{{ entry.offeredListing.title }}</a>
+                                        {% else %}—{% endif %}
+                                        {% if payer == entry.sender %} + <strong class="text-success">cash {{ entry.cashAmountMillimes|tnd }} TND</strong>{% endif %}
+                                    </span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    {{ _self.thumb(entry.listing, 30) }}
+                                    <span>
+                                        <i class="bi bi-box-arrow-left text-primary me-1"></i>
+                                        <strong>@{{ entry.receiver.username }}</strong> gives
+                                        <a href="{{ path('app_listing_show', {id: entry.listing.id}) }}" class="text-decoration-none">{{ entry.listing.title }}</a>
+                                        {% if payer == entry.receiver %} + <strong class="text-success">cash {{ entry.cashAmountMillimes|tnd }} TND</strong>{% endif %}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {% if entry.message %}
+                                <div class="small bg-light rounded-3 p-2 mt-2" style="white-space: pre-line;">{{ entry.message }}</div>
+                            {% endif %}
+
+                            {% if entry.respondedAt and entry.status.value in ['countered', 'rejected', 'cancelled', 'expired', 'accepted', 'completed'] %}
+                                <div class="small text-muted mt-2">Answered {{ entry.respondedAt|date('d M Y H:i') }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card-soft p-4">
+                    {% if offer.status.value == 'pending' %}
+                        <h2 class="h6 fw-bold mb-2">
+                            {% if offer.proposedBy == app.user %}Waiting for a response{% else %}Respond to this offer{% endif %}
+                        </h2>
+                        <p class="small text-muted mb-3">
+                            {% if offer.proposedBy == app.user %}
+                                {{ offer.responder.fullName }} has until {{ offer.expiresAt|date('d M Y') }} to accept, decline or counter.
+                            {% else %}
+                                Respond before {{ offer.expiresAt|date('d M Y') }} or the offer expires automatically.
+                            {% endif %}
+                        </p>
+
+                        {% if offer.proposedBy == app.user %}
+                            <form method="post" action="{{ path('app_offer_cancel', {id: offer.id}) }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('offer_action_' ~ offer.id) }}">
+                                <button type="submit" class="btn btn-outline-secondary w-100" onclick="return confirm('Cancel this offer?')">Cancel my offer</button>
+                            </form>
+                        {% else %}
+                            <div class="d-flex flex-column gap-2">
+                                <form method="post" action="{{ path('app_offer_accept', {id: offer.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('offer_action_' ~ offer.id) }}">
+                                    <button type="submit" class="btn btn-success w-100"><i class="bi bi-check2-circle me-1"></i>Accept this deal</button>
+                                </form>
+
+                                {% if counterForm %}
+                                    <button class="btn btn-outline-primary w-100" type="button" data-bs-toggle="collapse" data-bs-target="#counterBox" aria-expanded="{{ counterOpen|default(false) ? 'true' : 'false' }}">
+                                        <i class="bi bi-arrow-repeat me-1"></i>Counteroffer — adjust the cash
+                                    </button>
+                                    <div class="collapse {{ counterOpen|default(false) ? 'show' : '' }}" id="counterBox"
+                                         data-deal
+                                         data-cash-view="{{ viewerIsSender ? 'sender' : 'receiver' }}"
+                                         data-give-title="{{ counterGive ? counterGive.title : '' }}"
+                                         data-give-price="{{ counterGive and counterGive.priceMillimes ? counterGive.priceMillimes : '' }}"
+                                         data-target-title="{{ counterGet ? counterGet.title : '' }}"
+                                         data-target-price="{{ counterGet and counterGet.priceMillimes ? counterGet.priceMillimes : '' }}">
+                                        <div class="border rounded-3 p-3 mt-2">
+                                            {{ form_start(counterForm, {'action': path('app_offer_counter', {id: offer.id}), 'attr': {'novalidate': 'novalidate'}}) }}
+                                                <div class="input-group input-group-sm mb-3">
+                                                    <span class="input-group-text">You give</span>
+                                                    <span class="form-control bg-light" data-preview-give>—</span>
+                                                    <span class="input-group-text">You get</span>
+                                                    <span class="form-control bg-light" data-preview-get>—</span>
+                                                </div>
+
+                                                {{ form_errors(counterForm.cashDirection) }}
+                                                <div class="row g-2 mb-3">
+                                                    {% for choice in counterForm.cashDirection %}
+                                                        <div class="col-12">
+                                                            {{ form_widget(choice) }}
+                                                            <label class="cash-choice cash-choice-row" for="{{ choice.vars.id }}">
+                                                                <i class="bi {{ choice.vars.value == 'none' ? 'bi-arrow-left-right' : 'bi-cash-coin' }}"></i>
+                                                                <span class="fw-semibold small">{{ choice.vars.label }}</span>
+                                                            </label>
+                                                        </div>
+                                                    {% endfor %}
+                                                </div>
+
+                                                <div data-amount-wrap>
+                                                    <div class="input-group mb-1">
+                                                        {{ form_widget(counterForm.cashAmountTnd, {attr: {'data-deal-amount': ''}}) }}
+                                                        <span class="input-group-text">TND</span>
+                                                    </div>
+                                                    {{ form_help(counterForm.cashAmountTnd) }}
+                                                    {{ form_errors(counterForm.cashAmountTnd) }}
+                                                </div>
+
+                                                <div data-preview-note class="small text-muted mb-2 mt-2">Straight swap — no money changes hands.</div>
+                                                <div data-preview-net class="d-none mb-2"></div>
+
+                                                {{ form_row(counterForm.message) }}
+                                                <button type="submit" class="btn btn-brand w-100">Send counteroffer</button>
+                                            {{ form_end(counterForm) }}
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                <form method="post" action="{{ path('app_offer_reject', {id: offer.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('offer_action_' ~ offer.id) }}">
+                                    <button type="submit" class="btn btn-outline-danger w-100" onclick="return confirm('Decline this offer?')">Decline</button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    {% elseif offer.status.value == 'accepted' %}
+                        <h2 class="h6 fw-bold mb-3">Confirm the handover</h2>
+                        <ul class="list-unstyled small mb-3">
+                            <li class="d-flex justify-content-between border-bottom py-2">
+                                <span>@{{ offer.sender.username }} (requester)</span>
+                                <span>{{ offer.requesterConfirmedAt ? offer.requesterConfirmedAt|date('d M Y') : 'Waiting…' }}</span>
+                            </li>
+                            <li class="d-flex justify-content-between py-2">
+                                <span>@{{ offer.receiver.username }} (owner)</span>
+                                <span>{{ offer.ownerConfirmedAt ? offer.ownerConfirmedAt|date('d M Y') : 'Waiting…' }}</span>
+                            </li>
+                        </ul>
+                        {% set myConfirmed = offer.sender == app.user ? offer.requesterConfirmedAt : offer.ownerConfirmedAt %}
+                        {% if not myConfirmed %}
+                            <form method="post" action="{{ path('app_offer_confirm', {id: offer.id}) }}">
+                                <input type="hidden" name="_token" value="{{ csrf_token('offer_action_' ~ offer.id) }}">
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="bi bi-hand-thumbs-up me-1"></i>
+                                    {% if offer.sender == app.user %}I confirm I received "{{ offer.listing.title }}"{% else %}I confirm I handed over "{{ offer.listing.title }}"{% endif %}
+                                </button>
+                            </form>
+                        {% else %}
+                            <div class="alert alert-success small mb-0">You confirmed this trade. Waiting for the other party.</div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if counterForm %}
+        {% include 'trade/_deal_js.html.twig' %}
+    {% endif %}
+{% endblock %}

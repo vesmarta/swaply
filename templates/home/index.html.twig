@@ -1,0 +1,121 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Swaply — Trade, negotiate, buy in Tunisia{% endblock %}
+
+{% block body %}
+    <section class="hero py-5">
+        <div class="container py-4">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6">
+                    <span class="badge-soft d-inline-block mb-3">Peer-to-peer swapping · Tunisia</span>
+                    <h1 class="display-4 fw-bold lh-sm mb-3">Swap what you own.<br>Get what you want.</h1>
+                    <p class="lead text-secondary mb-4">
+                        Publish your products, propose exchanges, negotiate with counteroffers —
+                        or balance a trade with cash. Buy and sell too, in Tunisian Dinars.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3">
+                        {% if app.user %}
+                            <a class="btn btn-brand btn-lg px-4" href="{{ path('app_dashboard') }}">Go to my dashboard</a>
+                        {% else %}
+                            <a class="btn btn-brand btn-lg px-4" href="{{ path('app_register') }}">Create a free account</a>
+                            <a class="btn btn-outline-secondary btn-lg px-4" href="{{ path('app_login') }}">Log in</a>
+                        {% endif %}
+                        <a class="btn btn-outline-secondary btn-lg px-4" href="{{ path('app_marketplace') }}">Browse marketplace</a>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card-soft p-4 p-md-5">
+                        <div class="d-flex align-items-center justify-content-between gap-3">
+                            <div class="text-center flex-fill">
+                                <div class="feature-icon mx-auto mb-2"><i class="bi bi-laptop"></i></div>
+                                <div class="small fw-semibold">Your item</div>
+                                <div class="small text-muted">1 500 TND</div>
+                            </div>
+                            <i class="bi bi-arrow-left-right fs-2 text-primary"></i>
+                            <div class="text-center flex-fill">
+                                <div class="feature-icon mx-auto mb-2"><i class="bi bi-controller"></i></div>
+                                <div class="small fw-semibold">Their item</div>
+                                <div class="small text-muted">+ 500 TND</div>
+                            </div>
+                        </div>
+                        <hr class="my-4">
+                        <p class="small text-muted mb-0 text-center">
+                            <i class="bi bi-shield-check me-1"></i>
+                            Both sides confirm before a trade is completed.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container py-5">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card-soft h-100 p-4">
+                    <div class="feature-icon mb-3"><i class="bi bi-arrow-repeat"></i></div>
+                    <h2 class="h5 fw-semibold">Exchange products</h2>
+                    <p class="text-muted mb-0">Offer one or several of your products in exchange for someone else's — no money required.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card-soft h-100 p-4">
+                    <div class="feature-icon mb-3"><i class="bi bi-chat-square-text"></i></div>
+                    <h2 class="h5 fw-semibold">Negotiate freely</h2>
+                    <p class="text-muted mb-0">Counteroffer until both sides agree. Add a cash amount to balance the deal when values differ.</p>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card-soft h-100 p-4">
+                    <div class="feature-icon mb-3"><i class="bi bi-cash-coin"></i></div>
+                    <h2 class="h5 fw-semibold">Buy or sell directly</h2>
+                    <p class="text-muted mb-0">Owners can enable direct sale on their listings and accept purchase requests, in TND.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="container pb-4">
+        <div class="d-flex flex-wrap gap-2">
+            {% for category in categories %}
+                <a class="btn btn-sm btn-outline-secondary rounded-pill" href="{{ path('app_marketplace', {'category': category.slug}) }}">
+                    <i class="bi {{ category.icon }} me-1"></i>{{ category.name }}
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% if featured is not empty %}
+        <section class="container pb-4">
+            <div class="d-flex justify-content-between align-items-end mb-3">
+                <h2 class="h4 fw-bold mb-0"><i class="bi bi-star text-warning me-1"></i>Featured listings</h2>
+                <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_marketplace') }}">Browse all</a>
+            </div>
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+                {% for listing in featured %}
+                    <div class="col">{{ include('marketplace/_card.html.twig', {listing: listing}) }}</div>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+
+    <section class="container pb-5">
+        <div class="d-flex justify-content-between align-items-end mb-3">
+            <h2 class="h4 fw-bold mb-0">Fresh on Swaply</h2>
+            <a class="btn btn-outline-secondary btn-sm" href="{{ path('app_marketplace') }}">See everything</a>
+        </div>
+        {% if recent is not empty %}
+            <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-4 g-4">
+                {% for listing in recent %}
+                    <div class="col">{{ include('marketplace/_card.html.twig', {listing: listing}) }}</div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="card-soft p-5 text-center">
+                <i class="bi bi-box-seam fs-1 text-secondary d-block mb-3"></i>
+                <p class="text-muted mb-3">No items published yet. Be the first to list something!</p>
+                <a class="btn btn-brand" href="{{ path('app_listing_new') }}">List an item</a>
+            </div>
+        {% endif %}
+    </section>
+{% endblock %}

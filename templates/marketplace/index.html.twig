@@ -1,0 +1,139 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Marketplace — Swaply{% endblock %}
+
+{% block body %}
+    <section class="py-4 border-bottom bg-white">
+        <div class="container d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1 class="h3 fw-bold mb-1">Marketplace</h1>
+                <p class="text-muted mb-0">{{ total }} item{{ total == 1 ? '' : 's' }} available for swap or sale</p>
+            </div>
+            {% if app.user %}
+                <a href="{{ path('app_listing_new') }}" class="btn btn-brand"><i class="bi bi-plus-lg me-1"></i>List an item</a>
+            {% else %}
+                <a href="{{ path('app_register') }}" class="btn btn-brand"><i class="bi bi-plus-lg me-1"></i>Sign up to list an item</a>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="container py-4">
+        <div class="row g-4">
+            <div class="col-lg-3">
+                <form method="get" action="{{ path('app_marketplace') }}" class="card-soft p-3">
+                    <h2 class="h6 fw-bold mb-3"><i class="bi bi-funnel me-1"></i>Filters</h2>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="q">Keyword</label>
+                        <input class="form-control" type="text" id="q" name="q" value="{{ filters.q }}" placeholder="Search items…">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="category">Category</label>
+                        <select class="form-select" id="category" name="category">
+                            <option value="">All categories</option>
+                            {% for category in categories %}
+                                <option value="{{ category.slug }}" {{ filters.category == category.slug ? 'selected' : '' }}>{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="governorate">Governorate</label>
+                        <select class="form-select" id="governorate" name="governorate">
+                            <option value="">All Tunisia</option>
+                            {% for governorate in governorates %}
+                                <option value="{{ governorate }}" {{ filters.governorate == governorate ? 'selected' : '' }}>{{ governorate }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="condition">Condition</label>
+                        <select class="form-select" id="condition" name="condition">
+                            <option value="">Any condition</option>
+                            {% for condition in conditions %}
+                                <option value="{{ condition.value }}" {{ filters.condition == condition.value ? 'selected' : '' }}>{{ condition.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="type">Offer type</label>
+                        <select class="form-select" id="type" name="type">
+                            <option value="">Swap &amp; sale</option>
+                            <option value="swap" {{ filters.type == 'swap' ? 'selected' : '' }}>Available for swap</option>
+                            <option value="sale" {{ filters.type == 'sale' ? 'selected' : '' }}>Available for sale</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Price range (TND)</label>
+                        <div class="d-flex gap-2">
+                            <input class="form-control" type="text" name="min" value="{{ filters.min }}" placeholder="Min" inputmode="decimal">
+                            <input class="form-control" type="text" name="max" value="{{ filters.max }}" placeholder="Max" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" for="sort">Sort by</label>
+                        <select class="form-select" id="sort" name="sort">
+                            <option value="newest" {{ sort == 'newest' ? 'selected' : '' }}>Newest first</option>
+                            <option value="price_asc" {{ sort == 'price_asc' ? 'selected' : '' }}>Price: low to high</option>
+                            <option value="price_desc" {{ sort == 'price_desc' ? 'selected' : '' }}>Price: high to low</option>
+                            <option value="popular" {{ sort == 'popular' ? 'selected' : '' }}>Most viewed</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-brand w-100">Apply filters</button>
+                    <a href="{{ path('app_marketplace') }}" class="btn btn-link w-100 text-muted">Reset</a>
+                </form>
+            </div>
+
+            <div class="col-lg-9">
+                {% if items is empty %}
+                    <div class="card-soft p-5 text-center">
+                        <i class="bi bi-search fs-1 text-secondary d-block mb-3"></i>
+                        <h2 class="h5 fw-semibold">No items match your search</h2>
+                        <p class="text-muted mb-3">Try removing some filters or widening the price range.</p>
+                        <a class="btn btn-outline-secondary" href="{{ path('app_marketplace') }}">Clear filters</a>
+                    </div>
+                {% else %}
+                    <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-3 g-4">
+                        {% for listing in items %}
+                            <div class="col">{{ include('marketplace/_card.html.twig', {listing: listing}) }}</div>
+                        {% endfor %}
+                    </div>
+
+                    {% if pages > 1 %}
+                        {% set query = {'sort': sort} %}
+                        {% for key, value in filters %}
+                            {% if value is not empty %}
+                                {% set query = query|merge({(key): value}) %}
+                            {% endif %}
+                        {% endfor %}
+                        <nav class="mt-4" aria-label="Pagination">
+                            <ul class="pagination justify-content-center mb-0">
+                                <li class="page-item {{ page <= 1 ? 'disabled' : '' }}">
+                                    <a class="page-link" href="{{ path('app_marketplace', query|merge({'page': page - 1})) }}">&laquo;</a>
+                                </li>
+                                {% for p in 1..pages %}
+                                    {% if p == 1 or p == pages or (p >= page - 2 and p <= page + 2) %}
+                                        <li class="page-item {{ p == page ? 'active' : '' }}">
+                                            <a class="page-link" href="{{ path('app_marketplace', query|merge({'page': p})) }}">{{ p }}</a>
+                                        </li>
+                                    {% elseif p == page - 3 or p == page + 3 %}
+                                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                                    {% endif %}
+                                {% endfor %}
+                                <li class="page-item {{ page >= pages ? 'disabled' : '' }}">
+                                    <a class="page-link" href="{{ path('app_marketplace', query|merge({'page': page + 1})) }}">&raquo;</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </section>
+{% endblock %}

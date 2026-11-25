@@ -1,0 +1,31 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Favorites — Swaply{% endblock %}
+
+{% block body %}
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h1 class="h3 fw-bold mb-0"><i class="bi bi-heart-fill text-danger me-1"></i>Favorites</h1>
+                <p class="text-muted small mb-0">Items you saved for later.</p>
+            </div>
+            <a href="{{ path('app_marketplace') }}" class="btn btn-outline-secondary"><i class="bi bi-grid me-1"></i>Browse marketplace</a>
+        </div>
+
+        {% if listings is empty %}
+            <div class="card-soft p-5 text-center">
+                <i class="bi bi-heart fs-1 text-muted d-block mb-2"></i>
+                <p class="text-muted mb-3">No favorites yet. Tap the heart on any listing to save it here.</p>
+                <a href="{{ path('app_marketplace') }}" class="btn btn-brand">Find something to love</a>
+            </div>
+        {% else %}
+            <div class="row g-4">
+                {% for listing in listings %}
+                    <div class="col-6 col-md-4 col-lg-3">
+                        {% include 'marketplace/_card.html.twig' with {listing: listing} only %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

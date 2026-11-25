@@ -1,11 +1,9 @@
-# Enable stateless CSRF protection for forms and logins/logouts
+# CSRF protection with session-stored tokens (classic Symfony behavior).
+# The stateless double-submit mode (framework.csrf_protection.stateless_token_ids)
+# was removed: it hard-fails the login when a form is submitted before the
+# csrf-protection JS controller has booted, and it refuses the origin fallback
+# once a session has seen double-submit in a previous request.
 framework:
     form:
         csrf_protection:
             token_id: submit
-
-    csrf_protection:
-        stateless_token_ids:
-            - submit
-            - authenticate
-            - logout

@@ -1,0 +1,131 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Members — Moderation — Swaply{% endblock %}
+
+{% block body %}
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-4">
+            <div>
+                <h1 class="h3 fw-bold mb-0"><i class="bi bi-people me-1"></i>Members</h1>
+                <p class="text-muted small mb-0">Browse accounts and suspend or reactivate members.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ path('app_admin') }}" class="btn btn-outline-secondary"><i class="bi bi-shield-check me-1"></i>Moderation</a>
+                <a href="{{ path('app_marketplace') }}" class="btn btn-outline-secondary"><i class="bi bi-grid me-1"></i>Marketplace</a>
+            </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-4">
+                <div class="card-soft p-3 h-100">
+                    <div class="text-muted small text-uppercase fw-semibold">Members</div>
+                    <div class="display-6 fw-bold">{{ stats.total }}</div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card-soft p-3 h-100">
+                    <div class="text-muted small text-uppercase fw-semibold">Active</div>
+                    <div class="display-6 fw-bold text-success">{{ stats.active }}</div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card-soft p-3 h-100">
+                    <div class="text-muted small text-uppercase fw-semibold">Suspended</div>
+                    <div class="display-6 fw-bold {{ stats.suspended > 0 ? 'text-danger' : '' }}">{{ stats.suspended }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card-soft p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <h2 class="h6 fw-bold mb-0">{{ users|length }} account{{ users|length != 1 ? 's' }}</h2>
+                <form method="get" action="{{ path('app_admin_users') }}" class="d-flex gap-2">
+                    <input type="search" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Search name, username or email" style="min-width: 240px;">
+                    <button class="btn btn-sm btn-outline-primary"><i class="bi bi-search me-1"></i>Search</button>
+                    {% if q is not empty %}
+                        <a href="{{ path('app_admin_users') }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+                    {% endif %}
+                </form>
+            </div>
+
+            {% if users is empty %}
+                <div class="text-center text-muted small py-4"><i class="bi bi-person-x fs-3 d-block mb-2"></i>No members match “{{ q }}”.</div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Member</th>
+                                <th>Contact</th>
+                                <th>Location</th>
+                                <th>Joined</th>
+                                <th>Status</th>
+                                <th class="text-end">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for member in users %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="rounded-circle bg-light border d-inline-flex align-items-center justify-content-center fw-semibold" style="width: 36px; height: 36px;">
+                                            {{ member.firstName|first|upper }}{{ member.lastName|first|upper }}
+                                        </span>
+                                        <div>
+                                            <div class="fw-semibold">
+                                                {{ member.fullName }}
+                                                {% if 'ROLE_ADMIN' in member.roles %}
+                                                    <span class="badge text-bg-dark ms-1">Admin</span>
+                                                {% endif %}
+                                            </div>
+                                            <div class="small text-muted">@{{ member.username }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="small">
+                                    <div>{{ member.email }}</div>
+                                    <div class="text-muted">{{ member.phone }}</div>
+                                </td>
+                                <td class="small text-muted">
+                                    {% if member.city or member.governorate %}
+                                        {{ [member.city, member.governorate]|filter(v => v)|join(', ') }}
+                                    {% else %}
+                                        —
+                                    {% endif %}
+                                </td>
+                                <td class="small text-muted">{{ member.createdAt|date('d/m/Y') }}</td>
+                                <td>
+                                    {% if not member.isActive %}
+                                        <span class="badge text-bg-danger">Suspended</span>
+                                    {% elseif member.isVerified %}
+                                        <span class="badge text-bg-success">Active · verified</span>
+                                    {% else %}
+                                        <span class="badge text-bg-warning">Active · unverified</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    {% if member == app.user %}
+                                        <span class="text-muted small">You</span>
+                                    {% elseif 'ROLE_ADMIN' in member.roles %}
+                                        <span class="text-muted small">Protected</span>
+                                    {% else %}
+                                        <form method="post" action="{{ path('app_admin_user_toggle', {id: member.id}) }}" class="d-inline">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('admin_user_' ~ member.id) }}">
+                                            <input type="hidden" name="q" value="{{ q }}">
+                                            {% if member.isActive %}
+                                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-pause-circle me-1"></i>Suspend</button>
+                                            {% else %}
+                                                <button type="submit" class="btn btn-sm btn-outline-success"><i class="bi bi-play-circle me-1"></i>Reactivate</button>
+                                            {% endif %}
+                                        </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

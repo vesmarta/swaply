@@ -1,0 +1,37 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}My offers — Swaply{% endblock %}
+
+{% block body %}
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+            <div>
+                <h1 class="h3 fw-bold mb-1">My offers</h1>
+                <p class="text-muted mb-0">Swap negotiations you sent and received.</p>
+            </div>
+            <a class="btn btn-brand" href="{{ path('app_marketplace') }}"><i class="bi bi-search me-1"></i>Browse marketplace</a>
+        </div>
+
+        <h2 class="h5 fw-bold mb-3">Offers received <span class="badge rounded-pill bg-light text-dark border ms-1">{{ received|length }}</span></h2>
+        {% if received is empty %}
+            <div class="card-soft p-4 text-muted mb-4">No offers received yet. Publish more items to attract proposals.</div>
+        {% else %}
+            <div class="card-soft p-2 p-md-3 mb-4">
+                {% for offer in received %}
+                    {% include 'trade/_row.html.twig' with {offer: offer, role: 'received', last: loop.last} %}
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <h2 class="h5 fw-bold mb-3">Offers you sent <span class="badge rounded-pill bg-light text-dark border ms-1">{{ sent|length }}</span></h2>
+        {% if sent is empty %}
+            <div class="card-soft p-4 text-muted">You haven't proposed any swaps yet. Find something you like in the marketplace.</div>
+        {% else %}
+            <div class="card-soft p-2 p-md-3">
+                {% for offer in sent %}
+                    {% include 'trade/_row.html.twig' with {offer: offer, role: 'sent', last: loop.last} %}
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}

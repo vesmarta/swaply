@@ -1,0 +1,183 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ listing.title }} — Swaply{% endblock %}
+
+{% block body %}
+    <div class="container py-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb small">
+                <li class="breadcrumb-item"><a href="{{ path('app_home') }}">Home</a></li>
+                <li class="breadcrumb-item"><a href="{{ path('app_marketplace') }}">Marketplace</a></li>
+                <li class="breadcrumb-item"><a href="{{ path('app_marketplace', {'category': listing.category.slug}) }}">{{ listing.category.name }}</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ listing.title }}</li>
+            </ol>
+        </nav>
+
+        {% if listing.status.value == 'pending' %}
+            <div class="alert alert-info"><i class="bi bi-hourglass-split me-2"></i>This listing is awaiting moderator approval. Only you can see it right now.</div>
+        {% elseif listing.status.value == 'rejected' %}
+            <div class="alert alert-danger">
+                <i class="bi bi-x-octagon me-2"></i>This listing was rejected.
+                {% if listing.rejectionReason %}<strong>Reason:</strong> {{ listing.rejectionReason }}{% endif %}
+                <a href="{{ path('app_listing_edit', {id: listing.id}) }}" class="alert-link ms-2">Edit and resubmit</a>
+            </div>
+        {% elseif listing.status.value == 'reserved' %}
+            <div class="alert alert-info"><i class="bi bi-handshake me-2"></i>A deal is in progress for this item — new offers are paused until it completes.</div>
+        {% elseif listing.status.value in ['traded', 'sold'] %}
+            <div class="alert alert-secondary"><i class="bi bi-check2-circle me-2"></i>This item has been {{ listing.status.value }} and is no longer available.</div>
+        {% elseif listing.status.value == 'withdrawn' %}
+            <div class="alert alert-warning"><i class="bi bi-slash-circle me-2"></i>This listing was withdrawn by its owner.</div>
+        {% endif %}
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                {% if listing.images|length > 1 %}
+                    <div id="listingCarousel" class="carousel slide" data-bs-ride="false">
+                        <div class="carousel-inner rounded-3 overflow-hidden">
+                            {% for image in listing.images %}
+                                <div class="carousel-item {{ loop.first ? 'active' : '' }}">
+                                    <img src="{{ asset('uploads/listings/' ~ image.filename) }}" class="d-block w-100 bg-light" style="height: 430px; object-fit: cover;" alt="{{ listing.title }} (photo {{ loop.index }})">
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button class="carousel-control-prev" type="button" data-bs-target="#listingCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#listingCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                {% elseif listing.images|length == 1 %}
+                    <img src="{{ asset('uploads/listings/' ~ listing.coverImage.filename) }}" class="img-fluid w-100 rounded-3 bg-light" style="max-height: 430px; object-fit: cover;" alt="{{ listing.title }}">
+                {% else %}
+                    <div class="d-flex align-items-center justify-content-center bg-light text-secondary rounded-3" style="height: 430px;">
+                        <i class="bi bi-image fs-1"></i>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card-soft p-4">
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        <span class="badge rounded-pill bg-light text-dark border">{{ listing.type.label }}</span>
+                        <span class="badge rounded-pill bg-light text-dark border">{{ listing.condition.label }}</span>
+                        {% if listing.isFeatured %}<span class="badge text-bg-warning"><i class="bi bi-star-fill me-1"></i>Featured</span>{% endif %}
+                    </div>
+
+                    <h1 class="h3 fw-bold mb-2">{{ listing.title }}</h1>
+
+                    {% if listing.priceMillimes %}
+                        <div class="mb-3">
+                            <span class="display-6 fw-bold">{{ listing.priceMillimes|tnd }}</span>
+                            <span class="fs-5 text-muted">TND</span>
+                            {% if listing.type.value == 'swap' %}<span class="small text-muted ms-1">estimated value</span>{% endif %}
+                        </div>
+                    {% else %}
+                        <div class="mb-3"><span class="h4 fw-bold">Swap only</span></div>
+                    {% endif %}
+
+                    <ul class="list-unstyled small text-muted mb-4">
+                        <li class="mb-1"><i class="bi bi-geo-alt me-2"></i>{{ listing.governorate }}{% if listing.city %} · {{ listing.city }}{% endif %}</li>
+                        <li class="mb-1"><i class="bi bi-clock me-2"></i>Published {{ listing.createdAt|date('d M Y') }}</li>
+                        <li><i class="bi bi-eye me-2"></i>{{ listing.viewCount }} view{{ listing.viewCount == 1 ? '' : 's' }}</li>
+                    </ul>
+
+                    {% if app.user and app.user == listing.seller %}
+                        <div class="d-flex flex-wrap gap-2">
+                            {% if listing.status.value in ['pending', 'active', 'rejected'] %}
+                                <a href="{{ path('app_listing_edit', {id: listing.id}) }}" class="btn btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Edit</a>
+                            {% endif %}
+                            {% if listing.status.value == 'active' %}
+                                <form method="post" action="{{ path('app_listing_withdraw', {id: listing.id}) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('listing_action_' ~ listing.id) }}">
+                                    <button class="btn btn-outline-warning" onclick="return confirm('Withdraw this listing from the marketplace?')"><i class="bi bi-slash-circle me-1"></i>Withdraw</button>
+                                </form>
+                            {% endif %}
+                            <a href="{{ path('app_offers') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-left-right me-1"></i>My offers</a>
+                        </div>
+                    {% elseif listing.status.value == 'active' %}
+                        {% if not app.user %}
+                            <a class="btn btn-brand w-100" href="{{ path('app_login') }}">Log in to trade</a>
+                        {% elseif not app.user.isVerified %}
+                            <div class="alert alert-warning small mb-0">Verify your email address to trade on Swaply.</div>
+                        {% else %}
+                            <div class="d-flex flex-column gap-2">
+                                {% if listing.type.allowsSale and listing.priceMillimes %}
+                                    <a class="btn btn-brand w-100" href="{{ path('app_purchase_new', {id: listing.id}) }}"><i class="bi bi-bag-check me-1"></i>Buy now · {{ listing.priceMillimes|tnd }} TND</a>
+                                {% endif %}
+                                {% if listing.type.allowsSwap %}
+                                    <a class="btn {{ listing.type.allowsSale ? 'btn-outline-secondary' : 'btn-brand' }} w-100" href="{{ path('app_offer_new', {id: listing.id}) }}"><i class="bi bi-arrow-left-right me-1"></i>Propose a swap</a>
+                                {% endif %}
+                                <div class="d-flex gap-2">
+                                    <a class="btn btn-outline-secondary flex-grow-1" href="{{ path('app_message_seller', {id: listing.id}) }}"><i class="bi bi-chat-dots me-1"></i>Message seller</a>
+                                    <form method="post" action="{{ path('app_favorite_toggle', {id: listing.id}) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('favorite_' ~ listing.id) }}">
+                                        <button type="submit" class="btn btn-outline-danger" title="Save to favorites"><i class="bi bi-heart"></i></button>
+                                    </form>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+
+                <div class="card-soft p-4 mt-4">
+                    <h2 class="h6 fw-bold mb-3">Seller</h2>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="feature-icon flex-shrink-0">{{ listing.seller.fullName|slice(0, 1)|upper }}</div>
+                        <div>
+                            <div class="fw-semibold">
+                                {{ listing.seller.fullName }}
+                                {% if listing.seller.isVerified %}<i class="bi bi-patch-check-fill text-primary ms-1" title="Verified account"></i>{% endif %}
+                            </div>
+                            <div class="small text-muted">
+                                @{{ listing.seller.username }}
+                                {% if listing.seller.governorate %} · {{ listing.seller.governorate }}{% endif %}
+                                {% if listing.seller.createdAt %} · member since {{ listing.seller.createdAt|date('M Y') }}{% endif %}
+                            </div>
+                            {% if sellerStats.count > 0 %}
+                                <div class="small mt-1">
+                                    {% for i in 1..5 %}
+                                        <i class="bi bi-star{{ i <= sellerStats.avg|round ? '-fill text-warning' : ' text-muted' }}"></i>
+                                    {% endfor %}
+                                    <span class="fw-semibold ms-1">{{ sellerStats.avg }}</span>
+                                    <span class="text-muted">({{ sellerStats.count }} review{{ sellerStats.count == 1 ? '' : 's' }})</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {% if sellerReviews is not empty %}
+                        <div class="border-top mt-3 pt-3">
+                            {% for review in sellerReviews %}
+                                <div class="small mb-2 {{ not loop.last ? 'pb-2 border-bottom' : '' }}">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-semibold">@{{ review.author.username }}</span>
+                                        <span>
+                                            {% for i in 1..5 %}
+                                                <i class="bi bi-star{{ i <= review.rating ? '-fill text-warning' : ' text-muted' }}"></i>
+                                            {% endfor %}
+                                        </span>
+                                    </div>
+                                    {% if review.comment %}<div class="text-muted">{{ review.comment }}</div>{% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    {% if canReview %}
+                        <a href="{{ path('app_review_new', {id: listing.id}) }}" class="btn btn-outline-warning w-100 mt-3"><i class="bi bi-star me-1"></i>Leave a review</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mt-1">
+            <div class="col-lg-7">
+                <div class="card-soft p-4">
+                    <h2 class="h5 fw-bold mb-3">Description</h2>
+                    <p class="mb-0" style="white-space: pre-line;">{{ listing.description }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

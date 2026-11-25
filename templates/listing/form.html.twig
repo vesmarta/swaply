@@ -1,0 +1,58 @@
+{% extends 'base.html.twig' %}
+
+{% form_theme form 'bootstrap_5_layout.html.twig' %}
+
+{% block title %}{{ isEdit ? 'Edit listing' : 'List an item' }} — Swaply{% endblock %}
+
+{% block body %}
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                {% if isEdit and listing.images|length and listing.status.value in ['pending', 'active', 'rejected'] %}
+                    <div class="card-soft p-4 mb-4">
+                        <h2 class="h6 fw-bold mb-3">Current photos <span class="text-muted fw-normal">({{ listing.images|length }}/5)</span></h2>
+                        <div class="d-flex flex-wrap gap-3">
+                            {% for image in listing.images %}
+                                <div class="position-relative">
+                                    <img src="{{ asset('uploads/listings/' ~ image.filename) }}" alt="" class="rounded border" style="width: 110px; height: 110px; object-fit: cover;">
+                                    <form method="post" action="{{ path('app_listing_image_delete', {id: listing.id, imageId: image.id}) }}" class="position-absolute top-0 end-0">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('listing_action_' ~ listing.id) }}">
+                                        <button type="submit" class="btn btn-danger btn-sm p-1 lh-1" style="--bs-btn-padding-y: .05rem; --bs-btn-padding-x: .25rem;" title="Remove photo" onclick="return confirm('Remove this photo?')">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <div class="card-soft p-4 p-md-5">
+                    <h1 class="h3 fw-bold mb-1">{{ isEdit ? 'Edit listing' : 'List an item' }}</h1>
+                    <p class="text-muted mb-4">New and edited listings are reviewed by moderators before appearing in the marketplace.</p>
+
+                    {{ form_start(form, {'attr': {'novalidate': 'novalidate', 'enctype': 'multipart/form-data'}}) }}
+                        {{ form_errors(form) }}
+                        <div class="row g-3">
+                            <div class="col-12">{{ form_row(form.title) }}</div>
+                            <div class="col-md-6">{{ form_row(form.category) }}</div>
+                            <div class="col-md-6">{{ form_row(form.condition) }}</div>
+                            <div class="col-12">{{ form_row(form.description) }}</div>
+                            <div class="col-md-4">{{ form_row(form.type) }}</div>
+                            <div class="col-md-4">{{ form_row(form.priceTnd) }}</div>
+                            <div class="col-md-4"></div>
+                            <div class="col-md-6">{{ form_row(form.governorate) }}</div>
+                            <div class="col-md-6">{{ form_row(form.city) }}</div>
+                            <div class="col-12">{{ form_row(form.imageFiles) }}</div>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2 mt-4">
+                            <button type="submit" class="btn btn-brand px-4">{{ isEdit ? 'Save changes' : 'Submit listing' }}</button>
+                            <a class="btn btn-outline-secondary" href="{{ isEdit ? path('app_listing_show', {id: listing.id}) : path('app_my_listings') }}">Cancel</a>
+                        </div>
+                    {{ form_end(form) }}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
